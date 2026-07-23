@@ -73,10 +73,6 @@ function init() {
   CTX.clock = new THREE.Clock();
 
   // ---- 加载状态 ----
-  // 场景初始化后隐藏加载屏幕
-  setTimeout(() => {
-    document.getElementById('loading')?.classList.add('hidden');
-  }, 800);
 
   // ---- 初始化各模块 ----
   Environment.init();
