@@ -68,7 +68,7 @@ export function update(delta, elapsed) {
   const baseY = Math.sin(lantern.orbitAngle) * cfg.orbitRadiusY + 1.5;
 
   // 叠加垂直浮动（鱼在水中上下起伏）
-  const floatOffset = Math.sin(elapsed * 0.8) * 0.2;
+  const floatOffset = Math.sin(elapsed * 0.8) * 0.2+0.5;
   const targetX = baseX;
   const targetY = baseY + floatOffset;
 

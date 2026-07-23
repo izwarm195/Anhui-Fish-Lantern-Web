@@ -18,7 +18,7 @@ const CONFIG = {
     far: 100,
     position: { x: 0, y: 2, z: 12 },
     // 点击"开始"后推进到的位置
-    transitionPosition: { x: 0, y: 1.5, z: 6 },
+    transitionPosition: { x: 0, y: 2.5, z: 7 },
   },
 
   // 河流
@@ -48,8 +48,8 @@ const CONFIG = {
     bodyColor: 0xff8833,
     glowColor: 0xffaa44,
     scale: 0.8,
-    orbitRadiusX: 3.8,
-    orbitRadiusY: 2.2,
+    orbitRadiusX: 3,
+    orbitRadiusY: 2,
     // 非匀速转动参数
     orbitSpeed: 0.6,          // 基础速度
     burstInterval: 2.5,       // 每次"扑腾"间隔（秒）
@@ -79,21 +79,21 @@ const CONFIG = {
       title: '鱼灯文化',
       subtitle: '千年传承·徽州记忆',
       color: 0xff8833,
-      position: { x: -3.5, z: -5 },
+      position: { x: -5.5, z: -4 },
     },
     {
       id: 'craft',
       title: '制作工艺',
       subtitle: '扎骨·裱糊·绘彩·灯芯',
       color: 0xff6633,
-      position: { x: 0, z: -7 },
+      position: { x: 0, z: -8 },
     },
     {
       id: 'map',
       title: '文旅地图',
       subtitle: '探寻鱼灯·实地观赏',
       color: 0xff4433,
-      position: { x: 3.5, z: -5 },
+      position: { x: 5.5, z: -4 },
     },
   ],
 

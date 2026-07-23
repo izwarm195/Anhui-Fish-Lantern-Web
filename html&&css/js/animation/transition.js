@@ -5,7 +5,7 @@
  *   3. 两条新鱼灯从河面升起
  *   4. 三条鱼灯对应三大板块
  */
-import { gsap } from '../lib.js';
+import { gsap, CSS2DObject } from '../lib.js';
 import CONFIG from '../config.js';
 import CTX from '../ctx.js';
 import { FishLantern } from '../lantern/fish-lantern.js';
@@ -92,6 +92,9 @@ function handleReveal(onComplete) {
     mainLantern.dispose();
   }
 
+  // 存引用供 main.js 动画循环调用 fish.update()
+  CTX.sectionLanterns = sectionLanterns;
+
   // ---- 升起三条鱼灯 ----
   cfg.forEach((section, index) => {
     const fish = new FishLantern({
@@ -112,21 +115,54 @@ function handleReveal(onComplete) {
     // 加入场景
     CTX.scene.add(fish.group);
 
+    // ---- 创建板块标签（CSS2DObject，自动跟随鱼灯） ----
+    const labelEl = document.createElement('div');
+    labelEl.className = 'section-marker';
+    labelEl.dataset.section = section.id;
+    labelEl.style.pointerEvents = 'auto';
+    labelEl.style.cursor = 'pointer';
+    labelEl.innerHTML = `
+      <div class="marker-dot" style="--marker-color: #${section.color.toString(16).padStart(6, '0')};"></div>
+      <div class="marker-label">
+        <h3>${section.title}</h3>
+        <p>${section.subtitle}</p>
+      </div>
+    `;
+
+    const label = new CSS2DObject(labelEl);
+    label.position.set(0, -1.2, 0); // 浮在鱼灯下方
+    fish.group.add(label);
+
+    // 点击跳转
+    labelEl.addEventListener('click', () => {
+      console.log(`📍 导航至板块：${section.id}`);
+      // TODO: 滚动/跳转到对应内容区域
+    });
+
     // GSAP 升起动画（逐个延迟）
     gsap.to(fish.group.position, {
-      y: 0.6,
+      y: 0,
       duration: 1.2,
       delay: revealDelay + index * 0.25,
       ease: 'back.out(1.2)',
     });
 
-    // 淡入
+    // 淡入鱼灯
     gsap.fromTo(fish.group, {
       opacity: 0,
     }, {
       opacity: 1,
       duration: 0.6,
       delay: revealDelay + index * 0.25,
+    });
+
+    // 标签延迟淡入
+    gsap.fromTo(labelEl, {
+      opacity: 0,
+    }, {
+      opacity: 1,
+      duration: 0.5,
+      delay: revealDelay + index * 0.25 + 0.3,
     });
 
     // 缓慢旋转
@@ -139,27 +175,11 @@ function handleReveal(onComplete) {
     });
   });
 
-  // 显示板块标记 UI
+  // 进入探索状态
   setTimeout(() => {
-    showSectionMarkers();
-
     CTX.state = 'explore';
     if (onComplete) onComplete();
   }, (revealDelay + cfg.length * 0.25 + 1) * 1000);
-}
-
-function showSectionMarkers() {
-  const overlay = document.getElementById('sections-overlay');
-  if (!overlay) return;
-  overlay.classList.remove('hidden');
-  overlay.classList.add('visible');
-
-  const markers = overlay.querySelectorAll('.section-marker');
-  markers.forEach((el, i) => {
-    setTimeout(() => {
-      el.classList.add('revealed');
-    }, 500 + i * 300);
-  });
 }
 
 export function update(delta, elapsed) {
@@ -174,5 +194,6 @@ export function update(delta, elapsed) {
 export function reset() {
   sectionLanterns.forEach(fish => fish.dispose());
   sectionLanterns = [];
+  CTX.sectionLanterns = null;
   isTransitioning = false;
 }

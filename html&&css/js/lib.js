@@ -7,5 +7,6 @@
  * 各业务模块统一从本模块导入，无需关心底层加载方式。
  */
 export * as THREE from 'three';
+export { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
 export const gsap = window.gsap;
 export const ScrollTrigger = window.ScrollTrigger;

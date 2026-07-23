@@ -28,14 +28,12 @@ function handleStart() {
 
   // 按钮淡出
   const btn = document.getElementById('start-btn');
-  const hint = document.getElementById('hint');
   const header = document.getElementById('header');
 
   btn.style.pointerEvents = 'none';
 
   // 淡出 UI
   gsap.to(btn, { opacity: 0, scale: 0.8, duration: 0.5, ease: 'power2.in' });
-  gsap.to(hint, { opacity: 0, duration: 0.3 });
   gsap.to(header, { opacity: 0, duration: 0.5 });
 
   // 触发转场

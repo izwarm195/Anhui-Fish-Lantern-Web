@@ -8,7 +8,7 @@
  *   4. 运行动画循环
  *   5. 隐藏加载屏幕
  */
-import { THREE } from './lib.js';
+import { THREE, CSS2DRenderer } from './lib.js';
 import CONFIG from './config.js';
 import CTX from './ctx.js';
 
@@ -66,13 +66,21 @@ function init() {
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   container.appendChild(renderer.domElement);
 
+  // ---- CSS2D 渲染器（板块标签自动跟随 3D 物体） ----
+  const labelRenderer = new CSS2DRenderer();
+  labelRenderer.setSize(window.innerWidth, window.innerHeight);
+  labelRenderer.domElement.style.position = 'absolute';
+  labelRenderer.domElement.style.top = '0';
+  labelRenderer.domElement.style.left = '0';
+  labelRenderer.domElement.style.pointerEvents = 'none'; // 让标签本身的点击穿透，内部可点击元素再开启
+  container.appendChild(labelRenderer.domElement);
+
   // 挂载到共享上下文
   CTX.scene = scene;
   CTX.camera = camera;
   CTX.renderer = renderer;
+  CTX.labelRenderer = labelRenderer;
   CTX.clock = new THREE.Clock();
-
-  // ---- 加载状态 ----
 
   // ---- 初始化各模块 ----
   Environment.init();
@@ -132,11 +140,8 @@ function animate() {
 
   // 渲染
   CTX.renderer.render(CTX.scene, CTX.camera);
+  CTX.labelRenderer.render(CTX.scene, CTX.camera);
 }
-
-// ========================================
-//  响应式
-// ========================================
 
 function onResize() {
   const w = window.innerWidth;
@@ -144,6 +149,7 @@ function onResize() {
   CTX.camera.aspect = w / h;
   CTX.camera.updateProjectionMatrix();
   CTX.renderer.setSize(w, h);
+  CTX.labelRenderer.setSize(w, h);
 }
 
 // ========================================

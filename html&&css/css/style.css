@@ -35,7 +35,6 @@
   --z-canvas: 0;
   --z-overlay: 10;
   --z-ui: 20;
-  --z-loading: 100;
 }
 
 /* ----- Reset & Base ----- */
@@ -88,8 +87,7 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-}
+  justify-content: center;}
 
 #ui-overlay > * {
   pointer-events: auto;
@@ -98,7 +96,7 @@ body {
 /* ----- 标题 ----- */
 #header {
   position: absolute;
-  top: 6%;
+  top: 12%;
   text-align: center;
   opacity: 0;
   animation: fadeDown 1s 0.5s ease-out forwards;
@@ -184,62 +182,15 @@ body {
   inset: -10px;
 }
 
-/* ----- 右下提示 ----- */
-#hint {
-  position: absolute;
-  bottom: 6%;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  color: var(--text-muted);
-  font-size: 0.8rem;
-  letter-spacing: 0.05em;
-}
-
-.hint-icon {
-  font-size: 1rem;
-  animation: floatFish 2s ease-in-out infinite;
-}
-
-.hint-text {
-  font-family: var(--font-body);
-  font-weight: 300;
-}
-
-/* ----- 三大板块标记（转场后可见） ----- */
-#sections-overlay {
-  position: fixed;
-  inset: 0;
-  z-index: calc(var(--z-ui) - 1);
-  pointer-events: none;
-  display: flex;
-  justify-content: space-around;
-  align-items: flex-end;
-  padding: 0 8% 15%;
-  opacity: 0;
-  transition: opacity 1s ease;
-}
-
-#sections-overlay.visible {
-  opacity: 1;
-  pointer-events: auto;
-}
-
+/* ----- 三大板块标记（CSS2DRenderer 自动跟随鱼灯） ----- */
 .section-marker {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 12px;
-  opacity: 0;
-  transform: translateY(20px);
-  transition: opacity 0.6s ease, transform 0.6s ease;
+  gap: 6px;
   cursor: pointer;
   pointer-events: auto;
-}
-
-.section-marker.revealed {
-  opacity: 1;
-  transform: translateY(0);
+  /* CSS2DRenderer 控制屏幕位置，这里只保留样式 */
 }
 
 .marker-dot {
@@ -270,50 +221,9 @@ body {
   letter-spacing: 0.15em;
 }
 
-/* ----- 加载屏幕 ----- */
-.loading-screen {
-  position: fixed;
-  inset: 0;
-  z-index: var(--z-loading);
-  background: var(--bg-deeper);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: opacity 0.8s ease, visibility 0.8s ease;
-}
-
-.loading-screen.hidden {
-  opacity: 0;
-  visibility: hidden;
-  pointer-events: none;
-}
-
-.loading-content {
-  text-align: center;
-}
-
-.loading-fish {
-  font-size: 2.4rem;
-  animation: floatFish 1s ease-in-out infinite;
-}
-
-.loading-text {
-  margin-top: 12px;
-  font-family: var(--font-display);
-  color: var(--text-muted);
-  font-size: 0.9rem;
-  letter-spacing: 0.2em;
-  animation: textPulse 1.5s ease-in-out infinite;
-}
-
 /* ----- 通用工具类 ----- */
 .hidden {
   display: none !important;
-}
-
-.fade-in-delayed {
-  opacity: 0;
-  animation: fadeIn 0.8s 2s ease-out forwards;
 }
 
 /* ----- 关键帧动画 ----- */
@@ -339,19 +249,9 @@ body {
   }
 }
 
-@keyframes floatFish {
-  0%, 100% { transform: translateY(0); }
-  50%      { transform: translateY(-6px); }
-}
-
 @keyframes dotPulse {
   0%, 100% { box-shadow: 0 0 20px color-mix(in srgb, var(--marker-color, var(--gold)) 40%, transparent); }
   50%      { box-shadow: 0 0 35px color-mix(in srgb, var(--marker-color, var(--gold)) 70%, transparent); }
-}
-
-@keyframes textPulse {
-  0%, 100% { opacity: 0.4; }
-  50%      { opacity: 0.8; }
 }
 
 /* ========================================
@@ -367,9 +267,6 @@ body {
   .start-char {
     font-size: 1.3rem;
   }
-  #sections-overlay {
-    padding: 0 5% 20%;
-  }
 }
 
 /* 手机 */
@@ -383,9 +280,6 @@ body {
   }
   #header {
     top: 4%;
-  }
-  #sections-overlay {
-    padding: 0 4% 25%;
   }
   .marker-label h3 {
     font-size: 0.9rem;
