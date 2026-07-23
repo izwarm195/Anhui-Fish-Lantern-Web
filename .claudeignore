@@ -1,0 +1,12 @@
+# 目录
+Modules/
+modules/
+Source Code/
+source code/
+.git/
+
+# 文件
+.gitignore
+
+# PDF（体积大，一般不纳入上下文）
+*.pdf

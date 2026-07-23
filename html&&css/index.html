@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>鱼灯展 — 徽州鱼灯·非遗文化</title>
+  <meta name="description" content="探寻徽州鱼灯非遗文化，了解扎骨、裱糊、绘彩、灯芯四艺，查询实地观赏地点" />
+
+  <!-- 预连接 CDN -->
+  <link rel="preconnect" href="https://cdnjs.cloudflare.com" />
+  <link rel="preconnect" href="https://unpkg.com" />
+
+  <!-- 字体 -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;700;900&family=Noto+Sans+SC:wght@300;400;700&display=swap" rel="stylesheet" />
+
+  <!-- 样式 -->
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <!-- ====== Three.js 渲染容器 ====== -->
+  <div id="scene-container" aria-hidden="true"></div>
+
+  <!-- ====== 开场 UI 层 ====== -->
+  <div id="ui-overlay">
+    <!-- 标题 -->
+    <div id="header">
+      <h1 class="site-title">鱼灯展</h1>
+      <p class="site-subtitle">徽州非物质文化遗产</p>
+    </div>
+
+    <!-- 开始按钮 -->
+    <div id="start-wrapper">
+      <button id="start-btn" aria-label="开始体验">
+        <span class="start-char">开始</span>
+        <span class="start-ring"></span>
+        <span class="start-ring delay"></span>
+      </button>
+    </div>
+
+    <!-- 右下提示 -->
+    <div id="hint" class="fade-in-delayed">
+      <span class="hint-icon">🐟</span>
+      <span class="hint-text">鱼灯绕行，点击开始</span>
+    </div>
+  </div>
+
+  <!-- ====== 板块标记（JS 动态生成内容） ====== -->
+  <div id="sections-overlay" class="hidden">
+    <div class="section-marker" data-section="culture">
+      <div class="marker-dot" style="--marker-color: #ff8833;"></div>
+      <div class="marker-label">
+        <h3>鱼灯文化</h3>
+        <p>千年传承·徽州记忆</p>
+      </div>
+    </div>
+    <div class="section-marker" data-section="craft">
+      <div class="marker-dot" style="--marker-color: #ff6633;"></div>
+      <div class="marker-label">
+        <h3>制作工艺</h3>
+        <p>扎骨·裱糊·绘彩·灯芯</p>
+      </div>
+    </div>
+    <div class="section-marker" data-section="map">
+      <div class="marker-dot" style="--marker-color: #ff4433;"></div>
+      <div class="marker-label">
+        <h3>文旅地图</h3>
+        <p>探寻鱼灯·实地观赏</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ====== 加载状态 ====== -->
+  <div id="loading" class="loading-screen">
+    <div class="loading-content">
+      <div class="loading-fish">🐟</div>
+      <p class="loading-text">鱼灯初上...</p>
+    </div>
+  </div>
+
+  <!-- ====== 第三方库 CDN ====== -->
+  <!-- Three.js 用 importmap（ESM 格式，不支持 script 标签全局引入） -->
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js"
+      }
+    }
+  </script>
+  <!-- GSAP 用 script 标签（UMD 格式，挂载到 window.gsap） -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+
+  <!-- ====== 业务脚本（ESM，通过 lib.js 统一获取外部库） ====== -->
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>

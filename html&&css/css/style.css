@@ -1,0 +1,393 @@
+/* ========================================
+   鱼灯展 — 全局样式表
+   暗黑底色 · 暖金色流光 · 徽派意境
+   ======================================== */
+
+/* ----- CSS 变量 ----- */
+:root {
+  /* 色彩 */
+  --bg-dark: #0a0a14;
+  --bg-deeper: #06060e;
+  --gold: #ffaa44;
+  --gold-light: #ffcc77;
+  --gold-glow: rgba(255, 170, 68, 0.3);
+  --gold-dim: rgba(255, 170, 68, 0.12);
+  --warm-light: #ff8833;
+  --ember: #ff6633;
+  --fire: #ff4433;
+
+  /* 建筑色 */
+  --wall: #1a1a2e;
+  --roof: #0d0d1a;
+  --window-glow: rgba(255, 136, 51, 0.6);
+
+  /* 文字 */
+  --text-primary: rgba(255, 255, 240, 0.92);
+  --text-secondary: rgba(255, 255, 240, 0.6);
+  --text-muted: rgba(255, 255, 240, 0.35);
+
+  /* 字体 */
+  --font-display: 'Noto Serif SC', 'STSong', serif;
+  --font-body: 'Noto Sans SC', 'PingFang SC', sans-serif;
+
+  /* 尺寸 */
+  --header-height: 60px;
+  --z-canvas: 0;
+  --z-overlay: 10;
+  --z-ui: 20;
+  --z-loading: 100;
+}
+
+/* ----- Reset & Base ----- */
+*,
+*::before,
+*::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  font-size: 16px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  font-family: var(--font-body);
+  background: var(--bg-dark);
+  color: var(--text-primary);
+  overflow: hidden;
+  width: 100vw;
+  height: 100vh;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* ----- 场景容器 ----- */
+#scene-container {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: var(--z-canvas);
+}
+
+#scene-container canvas {
+  display: block;
+  width: 100% !important;
+  height: 100% !important;
+}
+
+/* ----- UI 叠加层 ----- */
+#ui-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-ui);
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+#ui-overlay > * {
+  pointer-events: auto;
+}
+
+/* ----- 标题 ----- */
+#header {
+  position: absolute;
+  top: 6%;
+  text-align: center;
+  opacity: 0;
+  animation: fadeDown 1s 0.5s ease-out forwards;
+}
+
+.site-title {
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: clamp(1.6rem, 4vw, 3.2rem);
+  color: var(--gold);
+  text-shadow: 0 0 40px var(--gold-glow), 0 0 80px var(--gold-dim);
+  letter-spacing: 0.15em;
+}
+
+.site-subtitle {
+  font-family: var(--font-body);
+  font-weight: 300;
+  font-size: clamp(0.75rem, 1.5vw, 1rem);
+  color: var(--text-secondary);
+  letter-spacing: 0.3em;
+  margin-top: 0.4em;
+}
+
+/* ----- 开始按钮 ----- */
+#start-wrapper {
+  position: absolute;
+  /* 由 JS 根据鱼灯轨道位置动态定位？不——使用固定居中 */
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  opacity: 0;
+  animation: fadeIn 0.8s 1.2s ease-out forwards;
+}
+
+#start-btn {
+  position: relative;
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.3s ease;
+}
+
+#start-btn:hover {
+  transform: scale(1.08);
+}
+
+#start-btn:active {
+  transform: scale(0.95);
+}
+
+.start-char {
+  font-family: var(--font-display);
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: var(--gold);
+  text-shadow: 0 0 30px var(--gold-glow), 0 0 60px var(--gold-dim);
+  z-index: 2;
+  letter-spacing: 0.1em;
+  transition: text-shadow 0.3s ease;
+}
+
+#start-btn:hover .start-char {
+  text-shadow: 0 0 50px var(--gold-glow), 0 0 100px rgba(255, 170, 68, 0.2);
+}
+
+/* 光环环 */
+.start-ring {
+  position: absolute;
+  inset: -4px;
+  border-radius: 50%;
+  border: 1.5px solid var(--gold-dim);
+  animation: ringPulse 3s ease-in-out infinite;
+}
+
+.start-ring.delay {
+  animation-delay: 1s;
+  inset: -10px;
+}
+
+/* ----- 右下提示 ----- */
+#hint {
+  position: absolute;
+  bottom: 6%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  letter-spacing: 0.05em;
+}
+
+.hint-icon {
+  font-size: 1rem;
+  animation: floatFish 2s ease-in-out infinite;
+}
+
+.hint-text {
+  font-family: var(--font-body);
+  font-weight: 300;
+}
+
+/* ----- 三大板块标记（转场后可见） ----- */
+#sections-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: calc(var(--z-ui) - 1);
+  pointer-events: none;
+  display: flex;
+  justify-content: space-around;
+  align-items: flex-end;
+  padding: 0 8% 15%;
+  opacity: 0;
+  transition: opacity 1s ease;
+}
+
+#sections-overlay.visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.section-marker {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.6s ease, transform 0.6s ease;
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+.section-marker.revealed {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.marker-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--marker-color, var(--gold));
+  box-shadow: 0 0 20px color-mix(in srgb, var(--marker-color, var(--gold)) 40%, transparent);
+  animation: dotPulse 2s ease-in-out infinite;
+}
+
+.marker-label {
+  text-align: center;
+}
+
+.marker-label h3 {
+  font-family: var(--font-display);
+  font-size: clamp(1rem, 2vw, 1.4rem);
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: 0.1em;
+  margin-bottom: 4px;
+}
+
+.marker-label p {
+  font-size: clamp(0.6rem, 1vw, 0.8rem);
+  color: var(--text-secondary);
+  letter-spacing: 0.15em;
+}
+
+/* ----- 加载屏幕 ----- */
+.loading-screen {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-loading);
+  background: var(--bg-deeper);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.8s ease, visibility 0.8s ease;
+}
+
+.loading-screen.hidden {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.loading-content {
+  text-align: center;
+}
+
+.loading-fish {
+  font-size: 2.4rem;
+  animation: floatFish 1s ease-in-out infinite;
+}
+
+.loading-text {
+  margin-top: 12px;
+  font-family: var(--font-display);
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  letter-spacing: 0.2em;
+  animation: textPulse 1.5s ease-in-out infinite;
+}
+
+/* ----- 通用工具类 ----- */
+.hidden {
+  display: none !important;
+}
+
+.fade-in-delayed {
+  opacity: 0;
+  animation: fadeIn 0.8s 2s ease-out forwards;
+}
+
+/* ----- 关键帧动画 ----- */
+@keyframes fadeIn {
+  to { opacity: 1; }
+}
+
+@keyframes fadeDown {
+  from { opacity: 0; transform: translateY(-20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes ringPulse {
+  0%, 100% {
+    opacity: 0.3;
+    transform: scale(1);
+    border-color: var(--gold-dim);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scale(1.06);
+    border-color: var(--gold-glow);
+  }
+}
+
+@keyframes floatFish {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-6px); }
+}
+
+@keyframes dotPulse {
+  0%, 100% { box-shadow: 0 0 20px color-mix(in srgb, var(--marker-color, var(--gold)) 40%, transparent); }
+  50%      { box-shadow: 0 0 35px color-mix(in srgb, var(--marker-color, var(--gold)) 70%, transparent); }
+}
+
+@keyframes textPulse {
+  0%, 100% { opacity: 0.4; }
+  50%      { opacity: 0.8; }
+}
+
+/* ========================================
+   响应式
+   ======================================== */
+
+/* 平板 */
+@media (max-width: 768px) {
+  #start-btn {
+    width: 100px;
+    height: 100px;
+  }
+  .start-char {
+    font-size: 1.3rem;
+  }
+  #sections-overlay {
+    padding: 0 5% 20%;
+  }
+}
+
+/* 手机 */
+@media (max-width: 480px) {
+  #start-btn {
+    width: 80px;
+    height: 80px;
+  }
+  .start-char {
+    font-size: 1.1rem;
+  }
+  #header {
+    top: 4%;
+  }
+  #sections-overlay {
+    padding: 0 4% 25%;
+  }
+  .marker-label h3 {
+    font-size: 0.9rem;
+  }
+}
