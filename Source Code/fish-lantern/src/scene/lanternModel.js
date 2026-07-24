@@ -7,7 +7,6 @@ export const MODEL_PARTS = [
         label: '鱼头',
         skeleton: '/models/鱼头.obj',
         covering: '/models/鱼头裱糊.obj',
-        gap: 0.02,
         swing: 0.07,
         phase: 0
     },
@@ -16,7 +15,6 @@ export const MODEL_PARTS = [
         label: '鱼身',
         skeleton: '/models/鱼身.obj',
         covering: '/models/鱼身裱糊.obj',
-        gap: 0.02,
         swing: 0.10,
         phase: 0.65
     },
@@ -25,7 +23,6 @@ export const MODEL_PARTS = [
         label: '鱼背',
         skeleton: '/models/鱼背.obj',
         covering: '/models/鱼背裱糊.obj',
-        gap: 0.02,
         swing: 0.17,
         phase: 1.3
     },
@@ -34,7 +31,6 @@ export const MODEL_PARTS = [
         label: '鱼尾',
         skeleton: '/models/鱼尾.obj',
         covering: '/models/鱼尾裱糊.obj',
-        gap: 0.02,
         swing: 0.28,
         phase: 1.95
     }
@@ -44,6 +40,10 @@ const COVER_OPACITY = 0.96;
 const HIDDEN_OPACITY = 0.035;
 const FADE_DURATION = 0.65;
 
+/* ------------------------------------------------------------------ */
+/*  工具函数                                                           */
+/* ------------------------------------------------------------------ */
+
 function getObjectBounds(object) {
     object.updateWorldMatrix(true, true);
 
@@ -51,22 +51,14 @@ function getObjectBounds(object) {
     const size = box.getSize(new THREE.Vector3());
     const center = box.getCenter(new THREE.Vector3());
 
-    return {
-        box,
-        size,
-        center
-    };
+    return { box, size, center };
 }
 
 function disposeMaterial(material) {
-    if (!material) {
-        return;
-    }
+    if (!material) return;
 
     for (const value of Object.values(material)) {
-        if (value?.isTexture) {
-            value.dispose();
-        }
+        if (value?.isTexture) value.dispose();
     }
 
     material.dispose();
@@ -74,9 +66,7 @@ function disposeMaterial(material) {
 
 function applySkeletonMaterial(object) {
     object.traverse((child) => {
-        if (!child.isMesh) {
-            return;
-        }
+        if (!child.isMesh) return;
 
         child.geometry.computeVertexNormals();
 
@@ -91,16 +81,13 @@ function applySkeletonMaterial(object) {
 
         child.castShadow = true;
         child.receiveShadow = true;
-
         child.userData.clickableFishPart = true;
     });
 }
 
 function applyCoveringMaterial(object) {
     object.traverse((child) => {
-        if (!child.isMesh) {
-            return;
-        }
+        if (!child.isMesh) return;
 
         child.geometry.computeVertexNormals();
 
@@ -122,7 +109,6 @@ function applyCoveringMaterial(object) {
 
         child.castShadow = true;
         child.receiveShadow = true;
-
         child.userData.clickableFishPart = true;
     });
 }
@@ -131,9 +117,7 @@ function collectMaterials(object) {
     const materials = [];
 
     object.traverse((child) => {
-        if (!child.isMesh) {
-            return;
-        }
+        if (!child.isMesh) return;
 
         if (Array.isArray(child.material)) {
             materials.push(...child.material);
@@ -147,9 +131,7 @@ function collectMaterials(object) {
 
 function markPart(object, key, label, layer) {
     object.traverse((child) => {
-        if (!child.isMesh) {
-            return;
-        }
+        if (!child.isMesh) return;
 
         child.userData.fishPartKey = key;
         child.userData.fishPartLabel = label;
@@ -157,78 +139,69 @@ function markPart(object, key, label, layer) {
     });
 }
 
-function loadOBJ(loader, url, manager) {
+function loadOBJ(loader, url) {
     return new Promise((resolve, reject) => {
-        loader.load(
-            url,
-            resolve,
-            (event) => {
-                if (!event.lengthComputable) {
-                    return;
-                }
-
-                manager?.onFileProgress?.(
-                    url,
-                    event.loaded / event.total
-                );
-            },
-            reject
-        );
+        loader.load(url, resolve, undefined, reject);
     });
 }
 
-/**
- * 把模型原点移动到自身包围盒中心。
- *
- * 这里不直接修改 geometry，而是移动 OBJ 根对象，
- * 避免多个 Mesh 时分别计算产生偏差。
- */
-function centerObject(object) {
-    const { center } = getObjectBounds(object);
+function easeInOutCubic(value) {
+    if (value < 0.5) return 4 * value * value * value;
 
-    object.position.sub(center);
-    object.updateMatrixWorld(true);
+    return 1 - Math.pow(-2 * value + 2, 3) / 2;
 }
 
-/**
- * 默认假设鱼的首尾方向沿模型局部 X 轴。
- *
- * 每个分段的中心按自身宽度自动排列，从而首尾相接。
- * 若建模软件导出的首尾方向不是 X 轴，应在 Blender 等软件中
- * 统一坐标轴，或修改这里的排列算法。
- */
-function arrangePartPivots(parts) {
-    const totalWidth = parts.reduce(
-        (sum, part) => sum + part.length + part.config.gap,
-        0
+function updateCoveringOpacity(part, deltaTime) {
+    if (Math.abs(part.currentOpacity - part.targetOpacity) < 0.001) {
+        part.currentOpacity = part.targetOpacity;
+
+        return;
+    }
+
+    part.fadeElapsed += deltaTime;
+
+    const progress = Math.min(part.fadeElapsed / FADE_DURATION, 1);
+    const easedProgress = easeInOutCubic(progress);
+
+    part.currentOpacity = THREE.MathUtils.lerp(
+        part.fadeStartOpacity,
+        part.targetOpacity,
+        easedProgress
     );
 
-    let cursor = -totalWidth / 2;
-
-    for (const part of parts) {
-        const centerX = cursor + part.length / 2;
-
-        part.basePosition.set(centerX, 0, 0);
-        part.pivot.position.copy(part.basePosition);
-
-        cursor += part.length + part.config.gap;
-    }
+    part.coveringMaterials.forEach((material) => {
+        material.opacity = part.currentOpacity;
+        material.depthWrite = part.currentOpacity > 0.92;
+        material.needsUpdate = true;
+    });
 }
+
+function disposeObject(object) {
+    object.traverse((child) => {
+        if (!child.isMesh) return;
+
+        child.geometry?.dispose();
+
+        if (Array.isArray(child.material)) {
+            child.material.forEach(disposeMaterial);
+        } else {
+            disposeMaterial(child.material);
+        }
+    });
+}
+
+/* ------------------------------------------------------------------ */
+/*  占位模型（OBJ 加载失败时使用）                                      */
+/* ------------------------------------------------------------------ */
 
 function createFallbackPart(config) {
     const skeleton = new THREE.Group();
     const covering = new THREE.Group();
 
-    const widthMap = {
-        head: 1.35,
-        body: 1.8,
-        back: 1.2,
-        tail: 1.25
-    };
-
+    const widthMap = { head: 1.35, body: 1.8, back: 1.2, tail: 1.25 };
     const width = widthMap[config.key] ?? 1.2;
 
-    const skeletonGeometry = new THREE.BoxGeometry(
+    const skeletonGeom = new THREE.BoxGeometry(
         width,
         config.key === 'tail' ? 1 : 1.35,
         0.9,
@@ -237,18 +210,16 @@ function createFallbackPart(config) {
         2
     );
 
-    const skeletonMaterial = new THREE.MeshBasicMaterial({
+    const skeletonMat = new THREE.MeshBasicMaterial({
         color: '#d58743',
         wireframe: true,
         transparent: true,
         opacity: 0.8
     });
 
-    skeleton.add(
-        new THREE.Mesh(skeletonGeometry, skeletonMaterial)
-    );
+    skeleton.add(new THREE.Mesh(skeletonGeom, skeletonMat));
 
-    const coveringGeometry = new THREE.BoxGeometry(
+    const coveringGeom = new THREE.BoxGeometry(
         width * 0.96,
         config.key === 'tail' ? 0.94 : 1.29,
         0.86,
@@ -257,7 +228,7 @@ function createFallbackPart(config) {
         2
     );
 
-    const coveringMaterial = new THREE.MeshStandardMaterial({
+    const coveringMat = new THREE.MeshStandardMaterial({
         color: '#e55224',
         emissive: '#541405',
         emissiveIntensity: 0.28,
@@ -266,33 +237,31 @@ function createFallbackPart(config) {
         opacity: COVER_OPACITY
     });
 
-    covering.add(
-        new THREE.Mesh(coveringGeometry, coveringMaterial)
-    );
+    covering.add(new THREE.Mesh(coveringGeom, coveringMat));
 
-    return {
-        skeleton,
-        covering,
-        isFallback: true
-    };
+    return { skeleton, covering, isFallback: true };
 }
 
- async function loadPart(loader, config, progressManager) {
+/* ------------------------------------------------------------------ */
+/*  加载单个分段                                                       */
+/* ------------------------------------------------------------------ */
+
+async function loadPart(loader, config) {
     let skeleton;
     let covering;
     let isFallback = false;
 
     try {
         [skeleton, covering] = await Promise.all([
-            loadOBJ(loader, config.skeleton, progressManager),
-            loadOBJ(loader, config.covering, progressManager)
+            loadOBJ(loader, config.skeleton),
+            loadOBJ(loader, config.covering)
         ]);
 
         applySkeletonMaterial(skeleton);
         applyCoveringMaterial(covering);
     } catch (error) {
         console.warn(
-            `[鱼灯模型] ${config.label}加载失败，使用占位模型：`,
+            `[鱼灯模型] ${config.label} 加载失败，使用占位模型：`,
             error
         );
 
@@ -303,40 +272,52 @@ function createFallbackPart(config) {
         isFallback = true;
     }
 
+    /*
+     * Blender 默认导出为 Z-up，Three.js 使用 Y-up。
+     * 绕 X 轴旋转 +90° 将 Blender Z-up 转换为 Three.js Y-up。
+     *
+     * 转换后：
+     *   Blender X → Three.js X（鱼身长度方向，不变）
+     *   Blender Y → Three.js -Z（鱼头朝向变为 -Z）
+     *   Blender Z → Three.js Y（向上）
+     */
+    skeleton.rotation.x = Math.PI / 2;
+    covering.rotation.x = Math.PI / 2;
+
     skeleton.name = `${config.label}-骨架`;
     covering.name = `${config.label}-裱糊`;
-
-    /*
-     * 每个 OBJ 单独居中，然后放入同一个 content 容器。
-     * 前提是同一分段的骨架和裱糊模型具有一致的尺寸与导出方向。
-     */
-    centerObject(skeleton);
-    centerObject(covering);
 
     markPart(skeleton, config.key, config.label, 'skeleton');
     markPart(covering, config.key, config.label, 'covering');
 
+    /*
+     * 骨架与裱糊放入同一个 content 容器。
+     * 由于 OBJ 已按 Blender 世界坐标导出，此时 content 内各顶点
+     * 即处于正确的相对位置。
+     */
     const content = new THREE.Group();
     content.name = `${config.label}-内容`;
     content.add(skeleton);
     content.add(covering);
 
+    content.updateWorldMatrix(true, true);
+
+    const bounds = getObjectBounds(content);
+    const center = bounds.center.clone();
+    const size = bounds.size.clone();
+
     /*
-     * pivot 是摆动轴。当前默认位于每段中心；
-     * 后续 arrangePartPivots 会按 X 轴顺序排列四段。
+     * 创建摆动 pivot，位于该分段的包围盒中心。
+     * content 相对 pivot 偏移，使 pivot 成为旋转中心。
      */
     const pivot = new THREE.Group();
     pivot.name = `${config.label}-摆动节点`;
+
+    content.position.set(-center.x, -center.y, -center.z);
     pivot.add(content);
+    pivot.position.copy(center);
 
-    const skeletonBounds = getObjectBounds(skeleton);
-    const coveringBounds = getObjectBounds(covering);
-
-    const length = Math.max(
-        skeletonBounds.size.x,
-        coveringBounds.size.x,
-        0.01
-    );
+    const length = Math.max(size.x, size.y, size.z, 0.01);
 
     const coveringMaterials = collectMaterials(covering);
 
@@ -357,7 +338,7 @@ function createFallbackPart(config) {
         covering,
         coveringMaterials,
         length,
-        basePosition: new THREE.Vector3(),
+        worldPosition: center.clone(),
         currentOpacity: COVER_OPACITY,
         targetOpacity: COVER_OPACITY,
         fadeStartOpacity: COVER_OPACITY,
@@ -367,102 +348,26 @@ function createFallbackPart(config) {
     };
 }
 
-function easeInOutCubic(value) {
-    if (value < 0.5) {
-        return 4 * value * value * value;
-    }
+/* ------------------------------------------------------------------ */
+/*  创建完整鱼灯模型（唯一对外入口）                                     */
+/* ------------------------------------------------------------------ */
 
-    return 1 - Math.pow(-2 * value + 2, 3) / 2;
-}
-
-function updateCoveringOpacity(part, deltaTime) {
-    if (Math.abs(part.currentOpacity - part.targetOpacity) < 0.001) {
-        part.currentOpacity = part.targetOpacity;
-        return;
-    }
-
-    part.fadeElapsed += deltaTime;
-
-    const progress = Math.min(
-        part.fadeElapsed / FADE_DURATION,
-        1
-    );
-
-    const easedProgress = easeInOutCubic(progress);
-
-    part.currentOpacity = THREE.MathUtils.lerp(
-        part.fadeStartOpacity,
-        part.targetOpacity,
-        easedProgress
-    );
-
-    part.coveringMaterials.forEach((material) => {
-        material.opacity = part.currentOpacity;
-
-        /*
-         * 渐隐期间关闭 depthWrite，避免透明表面遮挡骨架；
-         * 恢复到接近不透明时重新开启深度写入。
-         */
-        material.depthWrite = part.currentOpacity > 0.92;
-        material.needsUpdate = true;
-    });
-}
-
-function disposeObject(object) {
-    object.traverse((child) => {
-        if (!child.isMesh) {
-            return;
-        }
-
-        child.geometry?.dispose();
-
-        if (Array.isArray(child.material)) {
-            child.material.forEach(disposeMaterial);
-        } else {
-            disposeMaterial(child.material);
-        }
-    });
-}
-
-/**
- * 加载并创建完整鱼灯。
- *
- * 对外返回：
- * - root：加入场景的总容器
- * - clickableObjects：供 Raycaster 检测
- * - update：每帧更新摆动及透明动画
- * - togglePart：切换某一段裱糊
- * - dispose：释放模型资源
- */
 export async function createLanternModel(options = {}) {
-    const {
-        onFileProgress,
-        onPartToggle
-    } = options;
+    const { onFileProgress, onPartToggle } = options;
 
     const loader = new OBJLoader();
 
     const root = new THREE.Group();
     root.name = 'FishLantern';
 
-    /*
-     * modelRoot 用于整体浮动。
-     * 四个分段的 pivot 都加入这个节点。
-     */
     const modelRoot = new THREE.Group();
     modelRoot.name = 'FishLanternModelRoot';
     root.add(modelRoot);
 
-    const progressManager = {
-        onFileProgress
-    };
+    /* ---------- 顺序加载四个分段 ---------- */
 
     const parts = [];
 
-    /*
-     * 顺序加载可以保证进度提示与模型顺序一致，
-     * 也能降低同时解析多个大型 OBJ 时的内存峰值。
-     */
     for (let index = 0; index < MODEL_PARTS.length; index += 1) {
         const config = MODEL_PARTS[index];
 
@@ -471,11 +376,7 @@ export async function createLanternModel(options = {}) {
             config.skeleton.split('/').pop()
         );
 
-        const part = await loadPart(
-            loader,
-            config,
-            progressManager
-        );
+        const part = await loadPart(loader, config);
 
         parts.push(part);
         modelRoot.add(part.pivot);
@@ -486,59 +387,92 @@ export async function createLanternModel(options = {}) {
         );
     }
 
-    arrangePartPivots(parts);
+    /* ---------- 计算身体轴向 ---------- */
 
-    /*
-     * 根据完整鱼灯尺寸自动缩放，防止不同建模单位导致
-     * 模型过大、过小或超出镜头。
-     */
     modelRoot.updateWorldMatrix(true, true);
 
-    const boundsBeforeScale = new THREE.Box3().setFromObject(modelRoot);
-    const sizeBeforeScale = boundsBeforeScale.getSize(
-        new THREE.Vector3()
+    const headPos = parts[0].worldPosition.clone();
+    const tailPos = parts[parts.length - 1].worldPosition.clone();
+
+    const bodyDirection = tailPos.clone().sub(headPos);
+
+    const bodyLength = bodyDirection.length();
+
+    if (bodyLength > 0.001) {
+        bodyDirection.normalize();
+    } else {
+        /*
+         * 如果所有分段重叠（例如占位模型），回退到 X 轴。
+         */
+        bodyDirection.set(1, 0, 0);
+    }
+
+    /*
+     * 计算每个分段在身体轴向上的投影，
+     * 用于摆动时确定相位偏移。
+     */
+    const bodyProjections = parts.map((part) =>
+        bodyDirection.dot(
+            part.worldPosition.clone().sub(headPos)
+        )
     );
 
+    const maxProjection =
+        bodyProjections[bodyProjections.length - 1] || 1;
+
+    /* ---------- 整体缩放 ---------- */
+
+    const overallBounds = new THREE.Box3().setFromObject(modelRoot);
+    const overallSize = overallBounds.getSize(new THREE.Vector3());
+
     const desiredLength = 6;
-    const scale = sizeBeforeScale.x > 0
-        ? desiredLength / sizeBeforeScale.x
+    const dominantAxis = Math.max(
+        overallSize.x,
+        overallSize.y,
+        overallSize.z
+    );
+
+    const scale = dominantAxis > 0
+        ? desiredLength / dominantAxis
         : 1;
 
     modelRoot.scale.setScalar(scale);
     modelRoot.updateWorldMatrix(true, true);
 
-    /*
-     * 缩放后将整条鱼灯放到场景中心。
-     */
+    /* ---------- 居中 ---------- */
+
     const finalBounds = new THREE.Box3().setFromObject(modelRoot);
     const finalCenter = finalBounds.getCenter(new THREE.Vector3());
 
-    modelRoot.position.x -= finalCenter.x;
-    modelRoot.position.y -= finalCenter.y;
-    modelRoot.position.z -= finalCenter.z;
+    modelRoot.position.set(
+        -finalCenter.x,
+        -finalCenter.y,
+        -finalCenter.z
+    );
 
     /*
-     * 当前模型默认鱼头在 X 轴负方向、鱼尾在正方向。
-     * 如果模型显示方向相反，可启用下一行：
+     * （可选）旋转整条鱼，使鱼头朝向摄像机。
+     * 当前鱼头在 Blender 中朝向 Y+，经 Z→Y 转换后朝向 -Z。
+     * 取消下面注释可将鱼头旋转至 +Z（面向观察者）：
      *
      * modelRoot.rotation.y = Math.PI;
      */
+
+    /* ---------- 可点击对象收集 ---------- */
 
     const clickableObjects = [];
 
     parts.forEach((part) => {
         part.skeleton.traverse((child) => {
-            if (child.isMesh) {
-                clickableObjects.push(child);
-            }
+            if (child.isMesh) clickableObjects.push(child);
         });
 
         part.covering.traverse((child) => {
-            if (child.isMesh) {
-                clickableObjects.push(child);
-            }
+            if (child.isMesh) clickableObjects.push(child);
         });
     });
+
+    /* ---------- 交互方法 ---------- */
 
     function getPart(partKey) {
         return parts.find((part) => part.key === partKey);
@@ -547,15 +481,11 @@ export async function createLanternModel(options = {}) {
     function setPartHidden(partKey, hidden) {
         const part = getPart(partKey);
 
-        if (!part) {
-            return null;
-        }
+        if (!part) return null;
 
         part.hidden = hidden;
         part.fadeStartOpacity = part.currentOpacity;
-        part.targetOpacity = hidden
-            ? HIDDEN_OPACITY
-            : COVER_OPACITY;
+        part.targetOpacity = hidden ? HIDDEN_OPACITY : COVER_OPACITY;
         part.fadeElapsed = 0;
 
         const detail = {
@@ -572,52 +502,56 @@ export async function createLanternModel(options = {}) {
     function togglePart(partKey) {
         const part = getPart(partKey);
 
-        if (!part) {
-            return null;
-        }
+        if (!part) return null;
 
         return setPartHidden(partKey, !part.hidden);
     }
 
     function showAllCoverings() {
-        parts.forEach((part) => {
-            setPartHidden(part.key, false);
-        });
+        parts.forEach((part) => setPartHidden(part.key, false));
     }
 
     function hideAllCoverings() {
-        parts.forEach((part) => {
-            setPartHidden(part.key, true);
-        });
+        parts.forEach((part) => setPartHidden(part.key, true));
     }
+
+    /* ---------- 每帧更新 ---------- */
 
     function update(deltaTime, elapsed) {
         /*
-         * 整体缓慢浮动。
+         * 整体浮动。
          */
         root.position.y = 0.45 + Math.sin(elapsed * 1.15) * 0.12;
         root.rotation.z = Math.sin(elapsed * 0.48) * 0.025;
 
         /*
-         * 四段产生逐渐增强的波浪摆动。
-         * 鱼头最稳定，鱼尾摆幅最大。
+         * 四段波浪摆动。
          *
-         * rotation.y：左右摆动
-         * rotation.z：轻微上下扭动
+         * 摆动幅度沿身体轴向递增：鱼头最稳，鱼尾最大。
+         * 每个分段根据其在身体轴向上的投影位置计算相位。
          */
         parts.forEach((part, index) => {
-            const wave =
-                elapsed * 1.7 -
-                index * 0.72 +
-                part.config.phase;
+            const projection =
+                maxProjection > 0
+                    ? bodyProjections[index] / maxProjection
+                    : index / Math.max(parts.length - 1, 1);
 
+            const phaseOffset =
+                projection * (MODEL_PARTS.length - 1) * 0.72;
+
+            const wave = elapsed * 1.7 - phaseOffset + part.config.phase;
+
+            /*
+             * 主摆动：绕 Y 轴（左右偏航）
+             */
             part.pivot.rotation.y =
                 Math.sin(wave) * part.config.swing;
 
-            part.pivot.rotation.z =
-                Math.cos(wave * 0.86) *
-                part.config.swing *
-                0.24;
+            /*
+             * 轻微扭动：绕 X 轴（沿身体轴向滚动）
+             */
+            part.pivot.rotation.x =
+                Math.cos(wave * 0.86) * part.config.swing * 0.14;
 
             updateCoveringOpacity(part, deltaTime);
         });
@@ -626,9 +560,7 @@ export async function createLanternModel(options = {}) {
     function dispose() {
         disposeObject(root);
 
-        if (root.parent) {
-            root.parent.remove(root);
-        }
+        if (root.parent) root.parent.remove(root);
 
         parts.length = 0;
         clickableObjects.length = 0;
@@ -648,4 +580,3 @@ export async function createLanternModel(options = {}) {
         dispose
     };
 }
-               
