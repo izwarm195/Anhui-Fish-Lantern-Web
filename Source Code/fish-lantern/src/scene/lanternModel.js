@@ -281,8 +281,8 @@ async function loadPart(loader, config) {
      *   Blender Y → Three.js -Z（鱼头朝向变为 -Z）
      *   Blender Z → Three.js Y（向上）
      */
-    skeleton.rotation.x = Math.PI / 2;
-    covering.rotation.x = Math.PI / 2;
+    skeleton.rotation.x = -Math.PI / 2;
+    covering.rotation.x = -Math.PI / 2;
 
     skeleton.name = `${config.label}-骨架`;
     covering.name = `${config.label}-裱糊`;
@@ -525,11 +525,11 @@ export async function createLanternModel(options = {}) {
         root.rotation.z = Math.sin(elapsed * 0.48) * 0.025;
 
         /*
-         * 四段波浪摆动。
-         *
-         * 摆动幅度沿身体轴向递增：鱼头最稳，鱼尾最大。
-         * 每个分段根据其在身体轴向上的投影位置计算相位。
-         */
+        * 四段波浪摆动。
+        *
+        * 相邻分段摆动方向相反：鱼头顺时针时鱼身逆时针，
+        * 以此类推，模拟真实游动姿态。
+        */
         parts.forEach((part, index) => {
             const projection =
                 maxProjection > 0
@@ -542,19 +542,19 @@ export async function createLanternModel(options = {}) {
             const wave = elapsed * 1.7 - phaseOffset + part.config.phase;
 
             /*
-             * 主摆动：绕 Y 轴（左右偏航）
-             */
-            part.pivot.rotation.y =
-                Math.sin(wave) * part.config.swing;
+            * 偶数索引正向摆动，奇数索引反向摆动。
+            */
+            const direction = index % 2 === 0 ? 1 : -1;
 
-            /*
-             * 轻微扭动：绕 X 轴（沿身体轴向滚动）
-             */
+            part.pivot.rotation.y =
+                Math.sin(wave) * part.config.swing * direction;
+
             part.pivot.rotation.x =
-                Math.cos(wave * 0.86) * part.config.swing * 0.14;
+                Math.cos(wave * 0.86) * part.config.swing * 0.14 * direction;
 
             updateCoveringOpacity(part, deltaTime);
         });
+
     }
 
     function dispose() {
