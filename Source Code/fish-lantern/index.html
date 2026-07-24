@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+    <meta
+        name="description"
+        content="安徽徽州鱼灯三维交互展示"
+    >
+    <title>安徽鱼灯 · 3D展示</title>
+</head>
+
+<body>
+    <main id="app">
+        <div
+            id="scene-container"
+            aria-label="徽州鱼灯三维交互展示区域"
+        ></div>
+
+        <div id="loading-screen" class="loading-screen">
+            <div class="loading-screen__content">
+                <span class="loading-screen__fish">鱼</span>
+                <p id="loading-text">正在载入鱼灯模型……</p>
+                <div class="loading-screen__track">
+                    <div
+                        id="loading-progress"
+                        class="loading-screen__progress"
+                    ></div>
+                </div>
+            </div>
+        </div>
+
+        <div id="scene-message" class="scene-message" aria-live="polite"></div>
+
+        <section id="ui-layer">
+            <nav
+                id="site-navigation"
+                aria-label="鱼灯信息导航"
+            ></nav>
+
+            <div id="site-title"></div>
+
+            <div id="info-modal"></div>
+
+            <aside class="operation-tip">
+                拖动旋转 · 滚轮缩放 · 点击鱼灯分段切换裱糊
+            </aside>
+        </section>
+    </main>
+
+    <script type="module" src="/src/main.js"></script>
+</body>
+</html>
